@@ -1,0 +1,22 @@
+{
+  "name": "scoreladder-bot",
+  "version": "1.0.0",
+  "description": "A helper bot for managing the scoreladder discord server",
+  "main": "index.js",
+  "scripts": {
+    "test": "ping"
+  },
+  "repository": {
+    "type": "git",
+    "url": "bot"
+  },
+  "author": "Scyye, Scoreladder Devs",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.26.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.4.1"
+  }
+}
