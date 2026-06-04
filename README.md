@@ -1,1 +1,1 @@
-# README COMING SOON
+# [bot.scoreladder.org](https://bot.scoreladder.org/)
