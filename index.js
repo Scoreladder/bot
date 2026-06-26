@@ -50,6 +50,84 @@ client.on(Events.MessageCreate, async (message) => {
         }
     }
 
+
+    // ==============================
+    // EMAIL REPLY COMMAND
+    // ==============================
+    if (message.content === "!reply") {
+
+        if (!message.channel.isThread()) {
+            return message.reply("This command must be used inside an email thread.");
+        }
+
+        const threadId = message.channelId;
+
+        try {
+            // -----------------------------
+            // Get email metadata from Worker DB
+            // -----------------------------
+            const res = await fetch(
+                `https://mail-view.scoreladder.org/internal/get-thread?threadId=${threadId}`
+            );
+
+            const meta = await res.json();
+
+            if (!meta || meta.error) {
+                return message.reply("No email linked to this thread.");
+            }
+
+            // -----------------------------
+            // Generate secure token
+            // -----------------------------
+            const token = crypto.randomUUID();
+
+            const expiresAt = Date.now() + 1000 * 60 * 60 * 24; // 24h
+
+            // Save token in Worker DB
+            await fetch(
+                `https://mail-view.scoreladder.org/internal/create-reply-token`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        token,
+                        threadId,
+                        expiresAt
+                    })
+                }
+            );
+
+            const url = `https://mail-view.scoreladder.org/reply/${token}`;
+
+            // -----------------------------
+            // Send reply link
+            // -----------------------------
+            await message.reply({
+                content: `📨 **Reply Link Generated**\n${url}`,
+
+                components: [
+                    {
+                        type: 1,
+                        components: [
+                            {
+                                type: 2,
+                                style: 5,
+                                label: "Open Reply Editor",
+                                url
+                            }
+                        ]
+                    }
+                ]
+            });
+
+        } catch (err) {
+            console.error(err);
+            message.reply("Failed to generate reply link.");
+        }
+    }
+
     
 
     if (message.content.startsWith('!eval')) {
