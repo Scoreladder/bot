@@ -1,6 +1,6 @@
 // Require the necessary discord.js classes
 const { Client, Events, GatewayIntentBits, GuildEmoji } = require('discord.js');
-const { token, owners } = require('./config.json');
+const { token, owners, secret } = require('./config.json');
 const { inspect } = require('util');
 
 // Create a new client instance
@@ -94,7 +94,8 @@ client.on(Events.MessageCreate, async (message) => {
                     body: JSON.stringify({
                         token,
                         threadId,
-                        expiresAt
+                        expiresAt,
+                        secret
                     })
                 }
             );
@@ -217,6 +218,68 @@ client.on(Events.MessageCreate, async (message) => {
             await message.react("❌");
         }
     }
+
+    if (message.content.startsWith("!sendemail ")) {
+
+            if (!owners.includes(message.author.id)) {
+                return message.reply("❌ You are not allowed to use this command.");
+            }
+
+            const raw = message.content.slice("!sendemail ".length);
+
+            // split ONLY once
+            const firstSpace = raw.indexOf(" ");
+            const pipeIndex = raw.indexOf("|");
+
+            if (firstSpace === -1 || pipeIndex === -1) {
+                return message.reply(
+                    "Usage:\n`!sendemail to@example.com subject | message`"
+                );
+            }
+
+            
+
+            const to = raw.slice(0, firstSpace).trim();
+            const subject = raw.slice(firstSpace, pipeIndex).trim();
+
+            // 👇 KEEP RAW NEWLINES EXACTLY AS USER TYPED
+            const text = raw.slice(pipeIndex + 1);
+
+            if (!to || !subject || !text) {
+                return message.reply("Missing fields.");
+            }
+
+            try {
+                const res = await fetch(
+                    "https://mail-view.scoreladder.org/internal/send-email",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            to,
+                            subject,
+                            text,
+                            secret,
+                            html: `<b>${text}</b>`
+                        })
+                    }
+                );
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    return message.reply(`❌ Failed: ${JSON.stringify(data)}`);
+                }
+
+                return message.reply("✅ Email sent successfully.");
+
+            } catch (err) {
+                console.error(err);
+                return message.reply("❌ Error sending email.");
+            }
+        }
 });
 
 // Log in to Discord with your client's token
